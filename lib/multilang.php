@@ -20,7 +20,7 @@ class Multilang extends \Prefab {
 		E_Undefined='Undefined property: %s::$%s';
 	//@}
 
-	protected
+	public
 		//! current language
 		$current,
 		//! primary language
@@ -28,9 +28,9 @@ class Multilang extends \Prefab {
 		//! auto-detected language
 		$auto=FALSE,
 		//! migration mode
-		$migrate=FALSE;
+		$migrate=TRUE;
 
-	protected
+    public
 		//! available languages
 		$languages=array(),
 		//! original ALIASES
@@ -148,17 +148,9 @@ class Multilang extends \Prefab {
 	}
 
 	/**
-	 * Return the list of available locales (indexed by languages)
-	 * @return array
-	 */
-	function locales() {
-		return $this->languages;
-	}
-
-	/**
 	 * Language-aware reroute (autoprefix unnamed routes)
-	 * @param string $url 
-	 * @param bool $permanent 
+	 * @param string $url
+	 * @param bool $permanent
 	 * @return NULL
 	 */
 	function reroute($url=NULL,$permanent=FALSE) {
@@ -222,7 +214,19 @@ class Multilang extends \Prefab {
 		}
 		$this->f3->set('ROUTES',$routes);
 		foreach($redirects as $old=>$new)
-			$this->f3->route('GET '.$old,function($f3)use($new){$f3->reroute($new,TRUE);});
+			$this->f3->route('GET '.$old,function($f3)use($new){
+			    $new_parts = explode('/', substr($new,1));
+			    $new_uri = '';
+			    foreach($new_parts as $part){
+			        if(strpos($part, '@') === 0){
+                        $var = substr($part, 1);
+                        $new_uri .= '/' . $f3->get('PARAMS.'  . $var);
+                    }else{
+                        $new_uri .= '/' . $part;
+                    }
+                }
+                $f3->reroute($new_uri,TRUE);
+			});
 	}
 
 	//! Read-only public properties
